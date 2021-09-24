@@ -8,11 +8,14 @@
         <version>2.5.4</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
+
     <groupId>com.choi.toy</groupId>
-    <artifactId>alimee</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <artifactId>message-notice</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+
     <name>alimee</name>
-    <description>alimee</description>
+    <description>this is personal notice service module from that subscribe some famous person</description>
+
     <properties>
         <java.version>1.8</java.version>
     </properties>

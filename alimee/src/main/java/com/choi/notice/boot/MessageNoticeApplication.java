@@ -1,13 +1,13 @@
-package com.choi.toy.alimee;
+package com.choi.notice.boot;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class AlimeeApplication {
+public class MessageNoticeApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(AlimeeApplication.class, args);
+		SpringApplication.run(MessageNoticeApplication.class, args);
 	}
 
 }
