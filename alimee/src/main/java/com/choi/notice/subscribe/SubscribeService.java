@@ -1,10 +1,13 @@
 package com.choi.notice.subscribe;
 
+import com.choi.notice.entity.Influence;
 import com.choi.notice.sns.SnsService;
 import com.choi.notice.sns.SnsServiceFactory;
 import com.choi.notice.sns.SnsType;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.reactive.function.server.ServerResponse;
 import reactor.core.publisher.Mono;
 
 @Service
@@ -17,10 +20,9 @@ public class SubscribeService {
 		this.snsServiceFactory = snsServiceFactory;
 	}
 
-	public Mono<Void> subscribe(String influenceId, SnsType snsType) {
+	public Mono<ResponseEntity<Void>> subscribe(String influenceId, SnsType snsType) {
 		SnsService snsService = this.snsServiceFactory.create(snsType);
-		snsService.validateInfluence(influenceId);
-		return snsService.subscribeInfluence(influenceId);
+		return snsService.subscribeInfluence(new Influence(influenceId, snsType));
 	}
 
 }
