@@ -1,19 +1,24 @@
 package com.choi.notice.entity;
 
 import com.choi.notice.sns.SnsType;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
 
+@Document(collation = "notice")
 public class Influence {
 
-	private final String id;
+	@Id
+	private String id;
+	private final String userId;
 	private final SnsType snsType;
 
-	public Influence(String id, SnsType snsType) {
-		this.id = id;
+	public Influence(String userId, SnsType snsType) {
+		this.userId = userId;
 		this.snsType = snsType;
 	}
 
-	public String getId() {
-		return id;
+	public String getUserId() {
+		return userId;
 	}
 
 	public SnsType getSnsType() {
@@ -23,7 +28,7 @@ public class Influence {
 	@Override
 	public String toString() {
 		return "Influence{" +
-				"id='" + id + '\'' +
+				"id='" + userId + '\'' +
 				", snsType=" + snsType +
 				'}';
 	}
