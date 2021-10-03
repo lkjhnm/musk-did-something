@@ -4,7 +4,7 @@ import com.choi.notice.sns.SnsType;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
-@Document(collation = "notice")
+@Document(collection = "notice")
 public class Influence {
 
 	@Id
