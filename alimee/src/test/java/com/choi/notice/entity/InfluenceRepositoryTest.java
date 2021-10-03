@@ -12,13 +12,11 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
-import org.springframework.util.Assert;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@SpringBootTest(classes = {BootConfiguration.class, MongoDbConfiguration.class})
 @EnableAutoConfiguration
 @ExtendWith(SpringExtension.class)
 @TestPropertySource(locations = "classpath:application-test.properties")
