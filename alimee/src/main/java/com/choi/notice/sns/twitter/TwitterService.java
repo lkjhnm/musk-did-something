@@ -1,6 +1,6 @@
 package com.choi.notice.sns.twitter;
 
-import com.choi.notice.boot.BootConfiguration;
+import com.choi.notice.boot.config.BootConfiguration;
 import com.choi.notice.entity.Influence;
 import com.choi.notice.sns.SnsService;
 import com.choi.notice.sns.twitter.entity.TwitterUser;
@@ -44,6 +44,12 @@ public class TwitterService implements SnsService {
 				.subscribe(val -> logger.info("this is influence Subscriber : {}", val));
 	}
 
+	@Autowired
+	public void setApiConfig(BootConfiguration.ApiConfig apiConfig) {
+		this.apiConfig = apiConfig;
+	}
+
+	//todo: 구독목록에 이미 포함된 경우 해당 인플루언서를 구독하는 사용자만 추가
 	@Override
 	public Mono<ResponseEntity<Void>> subscribeInfluence(Influence influence) {
 		return Mono.from(validateInfluence(influence))
@@ -55,7 +61,7 @@ public class TwitterService implements SnsService {
 	private Mono<Influence> validateInfluence(Influence influence) {
 		 WebClient webClient = WebClient
 				.builder()
-				.baseUrl(String.format(validateBaseUri, influence.getId()))
+				.baseUrl(String.format(validateBaseUri, influence.getUserId()))
 				.defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
 			    .defaultHeaders(httpHeaders -> httpHeaders.setBearerAuth(bearToken))
 				.build();
@@ -79,10 +85,5 @@ public class TwitterService implements SnsService {
 				Mono.just(ResponseEntity.status(200).build()) :
 				Mono.error(new RuntimeException("publish emitter error is occurred"))
 		);
-	}
-
-	@Autowired
-	public void setApiConfig(BootConfiguration.ApiConfig apiConfig) {
-		this.apiConfig = apiConfig;
 	}
 }
