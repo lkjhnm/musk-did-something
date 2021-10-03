@@ -61,7 +61,7 @@ public class TwitterService implements SnsService {
 	private Mono<Influence> validateInfluence(Influence influence) {
 		 WebClient webClient = WebClient
 				.builder()
-				.baseUrl(String.format(validateBaseUri, influence.getUserId()))
+				.baseUrl(String.format(validateBaseUri, influence.getName()))
 				.defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
 			    .defaultHeaders(httpHeaders -> httpHeaders.setBearerAuth(bearToken))
 				.build();
