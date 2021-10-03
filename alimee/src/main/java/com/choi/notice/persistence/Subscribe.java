@@ -1,4 +1,4 @@
-package com.choi.notice.entity;
+package com.choi.notice.persistence;
 
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
@@ -13,17 +13,17 @@ public class Subscribe {
 	@Id
 	private String id;
 	/** 알림을 위한 임시 컬럼 추후 변경 가능 */
-	private List<String> userMail = new ArrayList<>();
+	private List<String> userId = new ArrayList<>();
 	@Indexed(unique = true)
 	private Influence influence;
 
-	public Subscribe(List<String> userMail, Influence influence) {
-		this.userMail.addAll(userMail);
+	public Subscribe(List<String> userId, Influence influence) {
+		this.userId.addAll(userId);
 		this.influence = influence;
 	}
 
-	public List<String> getUserMail() {
-		return userMail;
+	public List<String> getUserId() {
+		return userId;
 	}
 
 	public Influence getInfluence() {
@@ -31,7 +31,7 @@ public class Subscribe {
 	}
 
 	public Subscribe addUserMail(String userMail) {
-		this.userMail.add(userMail);
+		this.userId.add(userMail);
 		return this;
 	}
 
@@ -39,7 +39,7 @@ public class Subscribe {
 	public String toString() {
 		return "Subscribe{" +
 				"id='" + id + '\'' +
-				", userMail='" + userMail + '\'' +
+				", userMail='" + userId + '\'' +
 				", influence=" + influence +
 				'}';
 	}

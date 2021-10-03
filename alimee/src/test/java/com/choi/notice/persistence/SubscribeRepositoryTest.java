@@ -1,6 +1,6 @@
-package com.choi.notice.entity;
+package com.choi.notice.persistence;
 
-import com.choi.notice.sns.SnsType;
+import com.choi.notice.service.sns.SnsType;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.slf4j.Logger;
@@ -34,19 +34,19 @@ public class SubscribeRepositoryTest {
 	@Test
 	public void subscribeListSaveTest() {
 		Flux<Influence> influencePublisher = influenceEmitter.asFlux().log();
-		Flux<Subscribe> subscribePublisher = findSubscribeByInflunce(influencePublisher);
+		Flux<Subscribe> subscribePublisher = findSubscribeByInfluence(influencePublisher);
 		publishInfluence();
 
 		Flux<Subscribe> savedSubscribePublisher = this.subscribeRepository.saveAll(subscribePublisher);
 		StepVerifier.create(savedSubscribePublisher)
 				.assertNext(subscribe -> {
-					assertThat(subscribe.getUserMail()).contains("test@naver.com");
-					assertThat(subscribe.getInfluence().getName()).isEqualTo("test");
+					assertThat(subscribe.getUserId()).contains("test@naver.com");
+					assertThat(subscribe.getInfluence().getId()).isEqualTo("test");
 				})
 				.verifyComplete();
 	}
 
-	private Flux<Subscribe> findSubscribeByInflunce(Flux<Influence> influencePublisher) {
+	private Flux<Subscribe> findSubscribeByInfluence(Flux<Influence> influencePublisher) {
 		Flux<Subscribe> subscribePublisher = influencePublisher
 				.flatMap(influence -> this.subscribeRepository.findByInfluence(influence)
 				                                              .defaultIfEmpty(new Subscribe(Collections.emptyList(), influence))

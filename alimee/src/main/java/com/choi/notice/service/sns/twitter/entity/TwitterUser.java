@@ -1,4 +1,4 @@
-package com.choi.notice.sns.twitter.entity;
+package com.choi.notice.service.sns.twitter.entity;
 
 import java.util.List;
 

@@ -1,9 +1,11 @@
-package com.choi.notice.sns.twitter;
+package com.choi.notice.service.sns.twitter;
 
 import com.choi.notice.boot.config.BootConfiguration;
-import com.choi.notice.entity.Influence;
-import com.choi.notice.sns.SnsService;
-import com.choi.notice.sns.twitter.entity.TwitterUser;
+import com.choi.notice.persistence.Influence;
+import com.choi.notice.persistence.Subscribe;
+import com.choi.notice.persistence.SubscribeRepository;
+import com.choi.notice.service.sns.SnsService;
+import com.choi.notice.service.sns.twitter.entity.TwitterUser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,16 +20,19 @@ import reactor.core.publisher.Mono;
 import reactor.core.publisher.Sinks;
 
 import javax.annotation.PostConstruct;
+import java.util.Collections;
 
 @Service
 public class TwitterService implements SnsService {
 
 	private Logger logger = LoggerFactory.getLogger(getClass());
-	private final Sinks.Many<Influence> eventEmitter = Sinks.many().multicast().onBackpressureBuffer();
-	private final Flux<Influence> influenceChecker = eventEmitter.asFlux();
+	private final Sinks.Many<Subscribe> eventEmitter = Sinks.many().multicast().onBackpressureBuffer();
+	private final Flux<Subscribe> subscribeChecker = eventEmitter.asFlux();
 
 	@Value("${twitter.api.validate.base.uri}")
 	private String validateBaseUri;
+
+	private SubscribeRepository subscribeRepository;
 
 	BootConfiguration.ApiConfig apiConfig;
 
@@ -39,8 +44,9 @@ public class TwitterService implements SnsService {
 		initSubscribe();
 	}
 
+	// todo: 트위터 스캔 서비스 기능 구현
 	private void initSubscribe() {
-		influenceChecker
+		subscribeChecker
 				.subscribe(val -> logger.info("this is influence Subscriber : {}", val));
 	}
 
@@ -49,19 +55,35 @@ public class TwitterService implements SnsService {
 		this.apiConfig = apiConfig;
 	}
 
-	//todo: 구독목록에 이미 포함된 경우 해당 인플루언서를 구독하는 사용자만 추가
+	@Autowired
+	public void setSubscribeRepository(SubscribeRepository subscribeRepository) {
+		this.subscribeRepository = subscribeRepository;
+	}
+
 	@Override
-	public Mono<ResponseEntity<Void>> subscribeInfluence(Influence influence) {
+	public Mono<ResponseEntity<Void>> subscribeInfluence(Influence influence, String userId) {
 		return Mono.from(validateInfluence(influence))
+				.flatMap(this::findSubscribeByInfluence)
+				.flatMap(subscribe -> this.saveSubscribe(subscribe, userId))
 				.flatMap(this::publishSubscribeEvent)
-				.log()
+				.log()  //todo: 필요시에만 로그를 출력하도록?
 				.onErrorReturn(ResponseEntity.status(500).build());
+	}
+
+	private Mono<Subscribe> findSubscribeByInfluence(Influence influence) {
+		return this.subscribeRepository.findByInfluence(influence)
+		                               .defaultIfEmpty(new Subscribe(Collections.emptyList(), influence));
+	}
+
+	private Mono<Subscribe> saveSubscribe(Subscribe subscribe, String userId) {
+		subscribe.addUserMail(userId);
+		return this.subscribeRepository.save(subscribe);
 	}
 
 	private Mono<Influence> validateInfluence(Influence influence) {
 		 WebClient webClient = WebClient
 				.builder()
-				.baseUrl(String.format(validateBaseUri, influence.getName()))
+				.baseUrl(String.format(validateBaseUri, influence.getId()))
 				.defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
 			    .defaultHeaders(httpHeaders -> httpHeaders.setBearerAuth(bearToken))
 				.build();
@@ -79,8 +101,8 @@ public class TwitterService implements SnsService {
 				 });
 	}
 
-	private Mono<ResponseEntity<Void>> publishSubscribeEvent(Influence influence) {
-		Sinks.EmitResult emitResult = eventEmitter.tryEmitNext(influence);
+	private Mono<ResponseEntity<Void>> publishSubscribeEvent(Subscribe subscribe) {
+		Sinks.EmitResult emitResult = eventEmitter.tryEmitNext(subscribe);
 		return Mono.defer(() -> emitResult.isSuccess() ?
 				Mono.just(ResponseEntity.status(200).build()) :
 				Mono.error(new RuntimeException("publish emitter error is occurred"))

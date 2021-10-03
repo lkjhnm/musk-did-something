@@ -1,10 +1,10 @@
 package com.choi.notice.boot.config;
 
 import org.springframework.context.annotation.Configuration;
-import org.springframework.data.mongodb.repository.config.EnableMongoRepositories;
+import org.springframework.data.mongodb.repository.config.EnableReactiveMongoRepositories;
 
 @Configuration
-@EnableMongoRepositories(basePackages = "com.choi.notice.entity")
+@EnableReactiveMongoRepositories(basePackages = {"com.choi.notice.persistence"})
 public class MongoDbConfiguration {
 
 }

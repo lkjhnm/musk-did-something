@@ -1,4 +1,4 @@
-package com.choi.notice.entity;
+package com.choi.notice.persistence;
 
 import org.springframework.data.mongodb.repository.ReactiveMongoRepository;
 import reactor.core.publisher.Mono;

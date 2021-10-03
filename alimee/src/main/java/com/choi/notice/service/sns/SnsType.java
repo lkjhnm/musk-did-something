@@ -1,6 +1,6 @@
-package com.choi.notice.sns;
+package com.choi.notice.service.sns;
 
-import com.choi.notice.sns.twitter.TwitterService;
+import com.choi.notice.service.sns.twitter.TwitterService;
 
 public enum SnsType {
 	twitter(TwitterService.class)

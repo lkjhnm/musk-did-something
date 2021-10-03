@@ -1,4 +1,4 @@
-package com.choi.notice.sns;
+package com.choi.notice.service.sns;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
