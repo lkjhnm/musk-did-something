@@ -30,6 +30,9 @@ public class SinksTest {
 					.verifyComplete();
 	}
 
+	/**
+	 *  데이터를 1초간의 간격을 두고 발행
+	 */
 	private void tryEmitInterval(Sinks.Many<String> objectMany) throws InterruptedException {
 		objectMany.tryEmitNext("test1");
 		Thread.sleep(Duration.ofSeconds(1).toMillis());

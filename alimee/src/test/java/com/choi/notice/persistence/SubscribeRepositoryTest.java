@@ -31,9 +31,14 @@ public class SubscribeRepositoryTest {
 	private Sinks.Many<Influence> influenceEmitter = Sinks.many()
 	                                                .unicast()
 	                                                .onBackpressureBuffer();
+
+	private Flux<Influence> influencePublisher = influenceEmitter.asFlux().log();
+
+	/**
+	 *  Subscribe(구독 정보)가 발행되면 Influence 기준으로 Subscribe 를 찾은 후,신규 구독자 아이디를 추가한 후 저장 (update)
+	 */
 	@Test
-	public void subscribeListSaveTest() {
-		Flux<Influence> influencePublisher = influenceEmitter.asFlux().log();
+	public void subscribeSaveTest() {
 		Flux<Subscribe> subscribePublisher = findSubscribeByInfluence(influencePublisher);
 		publishInfluence();
 
@@ -52,7 +57,7 @@ public class SubscribeRepositoryTest {
 				                                              .defaultIfEmpty(new Subscribe(Collections.emptyList(), influence))
 				)
 				.log()
-				.map(subscribe -> subscribe.addUserMail("test2@naver.com"));
+				.map(subscribe -> subscribe.addUserId("test@naver.com"));
 		return subscribePublisher;
 	}
 

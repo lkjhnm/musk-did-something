@@ -30,8 +30,8 @@ public class Subscribe {
 		return influence;
 	}
 
-	public Subscribe addUserMail(String userMail) {
-		this.userId.add(userMail);
+	public Subscribe addUserId(String userId) {
+		this.userId.add(userId);
 		return this;
 	}
 

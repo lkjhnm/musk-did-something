@@ -76,7 +76,7 @@ public class TwitterService implements SnsService {
 	}
 
 	private Mono<Subscribe> saveSubscribe(Subscribe subscribe, String userId) {
-		subscribe.addUserMail(userId);
+		subscribe.addUserId(userId);
 		return this.subscribeRepository.save(subscribe);
 	}
 
