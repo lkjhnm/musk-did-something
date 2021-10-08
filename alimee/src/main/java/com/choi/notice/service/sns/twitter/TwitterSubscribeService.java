@@ -10,6 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -23,7 +24,7 @@ import javax.annotation.PostConstruct;
 import java.util.Collections;
 
 @Service
-public class TwitterService implements SnsService {
+public class TwitterSubscribeService implements SnsService {
 
 	private Logger logger = LoggerFactory.getLogger(getClass());
 	private final Sinks.Many<Subscribe> eventEmitter = Sinks.many().multicast().onBackpressureBuffer();
@@ -41,13 +42,11 @@ public class TwitterService implements SnsService {
 	@PostConstruct
 	public void initialize() {
 		this.bearToken = this.apiConfig.getProperty("twitter.api.bearer.token");
-		initSubscribe();
 	}
 
-	// todo: 트위터 스캔 서비스 기능 구현
-	private void initSubscribe() {
-		subscribeChecker
-				.subscribe(val -> logger.info("this is influence Subscriber : {}", val));
+	@Bean
+	public Flux<Subscribe> influenceChecker() {
+		return this.subscribeChecker;
 	}
 
 	@Autowired

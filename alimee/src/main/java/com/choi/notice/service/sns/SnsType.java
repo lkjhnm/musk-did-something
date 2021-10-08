@@ -1,9 +1,9 @@
 package com.choi.notice.service.sns;
 
-import com.choi.notice.service.sns.twitter.TwitterService;
+import com.choi.notice.service.sns.twitter.TwitterSubscribeService;
 
 public enum SnsType {
-	twitter(TwitterService.class)
+	twitter(TwitterSubscribeService.class)
 	;
 
 	private Class<? extends SnsService> serviceClazz;
