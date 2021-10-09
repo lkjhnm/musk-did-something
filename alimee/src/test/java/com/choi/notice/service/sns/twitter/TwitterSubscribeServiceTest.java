@@ -1,32 +1,17 @@
 package com.choi.notice.service.sns.twitter;
 
-import com.choi.notice.boot.config.BootConfiguration;
 import com.choi.notice.service.sns.twitter.entity.TwitterUser;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.DependsOn;
-import org.springframework.context.annotation.PropertySource;
-import org.springframework.core.env.Environment;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
-import static org.assertj.core.api.Assertions.*;
-
-import org.springframework.stereotype.Component;
-import org.springframework.test.context.TestPropertySource;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
-@ExtendWith(SpringExtension.class)
-@TestPropertySource(locations = {"classpath:application-test.properties", "classpath:/api-config.properties"})
-public class TwitterSubscribeServiceTest {
+import static org.assertj.core.api.Assertions.assertThat;
 
-	@Autowired
-	private Environment environment;
+public class TwitterSubscribeServiceTest extends AbstractTwitterServiceTest {
 
 	@Value("${twitter.api.validate.base.uri}")
 	String validateBaseUri;
@@ -35,9 +20,9 @@ public class TwitterSubscribeServiceTest {
 	public void validateInfluenceTest() {
 		WebClient webClient = WebClient
 				.builder()
-				.baseUrl(String.format(validateBaseUri, "test"))
+				.baseUrl(String.format(validateBaseUri, "elonmusk"))
 				.defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-				.defaultHeaders(httpHeaders -> httpHeaders.setBearerAuth(environment.getProperty("twitter.api.bearer.token")))
+				.defaultHeaders(httpHeaders -> httpHeaders.setBearerAuth(this.twitterToken))
 				.build();
 
 		Mono<TwitterUser> twitterUserMono = executeValidate(webClient);
