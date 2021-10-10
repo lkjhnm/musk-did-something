@@ -1,49 +1,66 @@
 package com.choi.notice.service.sns.twitter;
 
-import com.choi.notice.service.sns.twitter.entity.TwitterUser;
+import com.choi.notice.persistence.Influence;
+import com.choi.notice.persistence.Subscribe;
+import com.choi.notice.persistence.SubscribeRepository;
+import com.choi.notice.service.sns.SnsType;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
-import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.beans.factory.annotation.Autowired;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import javax.annotation.PostConstruct;
 
+/**
+ *
+ *  1. 인플루언서 구독요청 감지
+ *  2. 인플루언서 조회 없으면 인플루언서 유효성 검사
+ *  3. 신규 인플루언서 구독목록에 추가
+ */
 public class TwitterSubscribeServiceTest extends AbstractTwitterServiceTest {
 
-	@Value("${twitter.api.validate.base.uri}")
-	String validateBaseUri;
+	@Autowired
+	private SubscribeRepository subscribeRepository;
+
+	@Autowired
+	private TwitterApiService twitterApiService;
+
+	@PostConstruct
+	public void test() {
+		this.subscribeRepository.deleteAll().block();
+	}
+
+	Mono<Influence> testPublisher = Mono.just(new Influence("elonmusk", SnsType.twitter));
 
 	@Test
-	public void validateInfluenceTest() {
-		WebClient webClient = WebClient
-				.builder()
-				.baseUrl(String.format(validateBaseUri, "elonmusk"))
-				.defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-				.defaultHeaders(httpHeaders -> httpHeaders.setBearerAuth(this.twitterToken))
-				.build();
-
-		Mono<TwitterUser> twitterUserMono = executeValidate(webClient);
-		StepVerifier
-				.create(twitterUserMono)
-				.assertNext(twitterUser -> assertThat(twitterUser))
+	public void fetchSubscribeByInfluence() {
+		testPublisher
+				.flatMap(this::findSubscribeByInfluence)
+				.as(StepVerifier::create)
+				.expectNextCount(1)
 				.verifyComplete();
 	}
 
-	private Mono<TwitterUser> executeValidate(WebClient webClient) {
-		return webClient.get()
-		                .exchangeToMono(clientResponse -> {
-			                if (clientResponse.statusCode()
-			                                  .isError()) {
-				                return Mono.error(new RuntimeException("Response from server status code is error"));
-			                }
-			                return clientResponse
-					                .bodyToMono(TwitterUser.class)
-					                .log()
-					                .flatMap(dto -> dto.isError() ?
-							                Mono.error(new RuntimeException("this is unknown user")) : Mono.just(dto));
-		                });
+	@Test
+	public void saveSubscribeTest() {
+		testPublisher
+				.log()
+				.flatMap(this::findSubscribeByInfluence)
+				.flatMap(subscribeRepository::save)
+				.as(StepVerifier::create)
+				.expectNextCount(1)
+				.verifyComplete();
+
+		testPublisher
+				.map(influence -> influence.getId())
+				.map(subscribeRepository::findByInfluenceId)
+				.as(StepVerifier::create)
+				.expectNextCount(1)
+				.verifyComplete();
+	}
+
+	private Mono<Subscribe> findSubscribeByInfluence(Influence influence) {
+		return this.subscribeRepository.findByInfluenceId(influence.getId())
+		                               .switchIfEmpty(twitterApiService.validateInfluence(influence));
 	}
 }

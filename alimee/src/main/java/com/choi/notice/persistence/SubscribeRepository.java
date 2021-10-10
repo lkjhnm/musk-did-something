@@ -5,5 +5,5 @@ import reactor.core.publisher.Mono;
 
 public interface SubscribeRepository extends ReactiveMongoRepository<Subscribe, String> {
 
-	Mono<Subscribe> findByInfluence(Influence influence);
+	Mono<Subscribe> findByInfluenceId(String id);
 }

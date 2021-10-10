@@ -1,57 +1,31 @@
 package com.choi.notice.service.sns.twitter;
 
-import com.choi.notice.boot.config.BootConfiguration;
 import com.choi.notice.persistence.Influence;
 import com.choi.notice.persistence.Subscribe;
 import com.choi.notice.persistence.SubscribeRepository;
 import com.choi.notice.service.sns.SnsService;
-import com.choi.notice.service.sns.twitter.entity.TwitterUser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.Sinks;
-
-import javax.annotation.PostConstruct;
-import java.util.Collections;
 
 @Service
 public class TwitterSubscribeService implements SnsService {
 
 	private Logger logger = LoggerFactory.getLogger(getClass());
 	private final Sinks.Many<Subscribe> eventEmitter = Sinks.many().multicast().onBackpressureBuffer();
-	private final Flux<Subscribe> subscribeChecker = eventEmitter.asFlux();
-
-	@Value("${twitter.api.validate.base.uri}")
-	private String validateBaseUri;
 
 	private SubscribeRepository subscribeRepository;
-
-	BootConfiguration.ApiConfig apiConfig;
-
-	private String bearToken;
-
-	@PostConstruct
-	public void initialize() {
-		this.bearToken = this.apiConfig.getProperty("twitter.api.bearer.token");
-	}
+	private TwitterApiService twitterApiService;
 
 	@Bean
-	public Flux<Subscribe> influenceChecker() {
-		return this.subscribeChecker;
-	}
-
-	@Autowired
-	public void setApiConfig(BootConfiguration.ApiConfig apiConfig) {
-		this.apiConfig = apiConfig;
+	public Flux<Subscribe> subscribePublisher() {
+		return eventEmitter.asFlux();
 	}
 
 	@Autowired
@@ -59,19 +33,19 @@ public class TwitterSubscribeService implements SnsService {
 		this.subscribeRepository = subscribeRepository;
 	}
 
+	@Autowired
+	public void setTwitterApiService(TwitterApiService twitterApiService) {
+		this.twitterApiService = twitterApiService;
+	}
+
 	@Override
 	public Mono<ResponseEntity<Void>> subscribeInfluence(Influence influence, String userId) {
-		return Mono.from(validateInfluence(influence))
-				.flatMap(this::findSubscribeByInfluence)
+		return Mono.just(influence)
+				.flatMap(twitterApiService::validateInfluence)
 				.flatMap(subscribe -> this.saveSubscribe(subscribe, userId))
 				.flatMap(this::publishSubscribeEvent)
 				.log()  //todo: 필요시에만 로그를 출력하도록?
 				.onErrorReturn(ResponseEntity.status(500).build());
-	}
-
-	private Mono<Subscribe> findSubscribeByInfluence(Influence influence) {
-		return this.subscribeRepository.findByInfluence(influence)
-		                               .defaultIfEmpty(new Subscribe(Collections.emptyList(), influence));
 	}
 
 	private Mono<Subscribe> saveSubscribe(Subscribe subscribe, String userId) {
@@ -79,26 +53,7 @@ public class TwitterSubscribeService implements SnsService {
 		return this.subscribeRepository.save(subscribe);
 	}
 
-	private Mono<Influence> validateInfluence(Influence influence) {
-		 WebClient webClient = WebClient
-				.builder()
-				.baseUrl(String.format(validateBaseUri, influence.getId()))
-				.defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-			    .defaultHeaders(httpHeaders -> httpHeaders.setBearerAuth(bearToken))
-				.build();
 
-		 return webClient.get()
-				 .exchangeToMono(clientResponse -> {
-					 if (clientResponse.statusCode().isError()) {
-						return Mono.error(new RuntimeException("Response from server status code is error"));
-					 }
-					 return clientResponse
-							 .bodyToMono(TwitterUser.class)
-							 .log()
-							 .flatMap(dto -> dto.isError() ?
-									 Mono.error(new RuntimeException("this is unknown user")) : Mono.just(influence));
-				 });
-	}
 
 	private Mono<ResponseEntity<Void>> publishSubscribeEvent(Subscribe subscribe) {
 		Sinks.EmitResult emitResult = eventEmitter.tryEmitNext(subscribe);

@@ -1,48 +1,54 @@
 package com.choi.notice.service.sns.twitter;
 
-import org.assertj.core.api.Assertions;
+import com.choi.notice.persistence.Influence;
+import com.choi.notice.persistence.SubscribeRepository;
+import com.choi.notice.service.sns.SnsType;
+import com.choi.notice.service.sns.twitter.entity.Tweet;
+import com.choi.notice.service.sns.twitter.entity.TwitterUser;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
-import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.beans.factory.annotation.Autowired;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
-import java.util.Map;
+import javax.annotation.PostConstruct;
 
+/**
+ *  1. 트위터 체크
+ *  2. 최신 트윗 여부 판별
+ */
 public class TwitterCheckServiceTest extends AbstractTwitterServiceTest {
 
-	@Value("${twitter.api.single-tweet.base.uri}")
-	private String subscribeBaseUri;
+	@Autowired
+	private SubscribeRepository subscribeRepository;
 
-	//https://developer.twitter.com/en/docs/twitter-api/tweets/timelines/api-reference/get-users-id-tweets#Default
-	//44196397
+	@Autowired
+	private TwitterApiService twitterApiService;
+
+	@PostConstruct
+	public void initialize() {
+		cleanDb();
+		elonmusk.flatMap(twitterApiService::validateInfluence)
+				.flatMap(subscribeRepository::save)
+				.block();
+	}
+
+	private void cleanDb() {
+		this.subscribeRepository.deleteAll().block();
+	}
+
+	Mono<Influence> elonmusk = Mono.just(new Influence("elonmusk", SnsType.twitter));
+
 	@Test
-	public void tweetCheckApiTest() {
-		Mono<Map> mapMono = executeTweetCheckApi();
-		StepVerifier
-				.create(mapMono)
-				.assertNext(value -> Assertions.assertThat(value))
+	public void tweetCheckTest() {
+		elonmusk
+				.map(influence -> influence.getId())
+				.flatMap(subscribeRepository::findByInfluenceId)
+				.map(subscribe -> subscribe.getInfluence().<TwitterUser>getSnsDetail())
+				.flatMap(twitterApiService::checkTweet)
+				.log()
+				.as(StepVerifier::create)
+				.expectNextCount(1)
 				.verifyComplete();
 	}
 
-	@Test
-	public void recentlyTweetDetectTest() {
-
-	}
-
-	private Mono<Map> executeTweetCheckApi() {
-		WebClient webClient = WebClient
-				.builder()
-				.baseUrl(String.format(subscribeBaseUri, "44196397"))
-				.defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-				.defaultHeaders(httpHeaders -> httpHeaders.setBearerAuth(this.twitterToken))
-				.build();
-
-		Mono<Map> mapMono = webClient.get()
-		                             .exchangeToMono(clientResponse -> clientResponse.bodyToMono(Map.class)
-		                                                                             .log());
-		return mapMono;
-	}
 }
