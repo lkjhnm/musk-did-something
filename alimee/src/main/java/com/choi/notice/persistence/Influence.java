@@ -6,6 +6,7 @@ public class Influence {
 
 	private String id;
 	private SnsType snsType;
+	private SnsDetails<?> snsDetails;
 
 	public Influence(String id, SnsType snsType) {
 		this.id = id;
@@ -24,8 +25,18 @@ public class Influence {
 		this.id = id;
 	}
 
-	public void setSnsType(SnsType snsType) {
+	public Influence setSnsType(SnsType snsType) {
 		this.snsType = snsType;
+		return this;
+	}
+
+	public <T extends SnsDetails<?>> T getSnsDetail() {
+		return (T) snsDetails.getDetail();
+	}
+
+	public Influence setSnsDetail(SnsDetails<? extends SnsDetails> snsDetailsDetail) {
+		this.snsDetails = snsDetailsDetail;
+		return this;
 	}
 
 	@Override

@@ -1,14 +1,22 @@
 package com.choi.notice.service.sns.twitter.entity;
 
+import com.choi.notice.persistence.SnsDetails;
+
 import java.util.List;
 
-public class TwitterUser {
+public class TwitterUser implements SnsDetails<TwitterUser> {
 
 	List<Error> errors;
 	Data data;
+	Tweet tweet;
+
+	@Override
+	public TwitterUser getDetail() {
+		return this;
+	}
 
 	public boolean isError() {
-		return errors != null;
+		return errors != null || (errors == null && data == null);
 	}
 
 	public List<Error> getErrors() {
@@ -27,15 +35,25 @@ public class TwitterUser {
 		this.data = data;
 	}
 
+	public Tweet getTweet() {
+		return tweet;
+	}
+
+	public TwitterUser setTweet(Tweet tweet) {
+		this.tweet = tweet;
+		return this;
+	}
+
 	@Override
 	public String toString() {
 		return "TwitterUser{" +
 				"errors=" + errors +
 				", data=" + data +
+				", tweet=" + tweet +
 				'}';
 	}
 
-	private static class Error {
+	public static class Error {
 		private String detail;
 		private String title;
 		private String resourceType;
@@ -104,7 +122,7 @@ public class TwitterUser {
 		}
 	}
 
-	private static class Data {
+	public static class Data {
 		private String id;
 		private String name;
 		private String username;
