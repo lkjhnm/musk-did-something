@@ -41,19 +41,22 @@ public class TwitterSubscribeService implements SnsService {
 	@Override
 	public Mono<ResponseEntity<Void>> subscribeInfluence(Influence influence, String userId) {
 		return Mono.just(influence)
-				.flatMap(twitterApiService::validateInfluence)
+				.flatMap(this::findSubscribeByInfluence)
 				.flatMap(subscribe -> this.saveSubscribe(subscribe, userId))
 				.flatMap(this::publishSubscribeEvent)
 				.log()  //todo: 필요시에만 로그를 출력하도록?
 				.onErrorReturn(ResponseEntity.status(500).build());
 	}
 
+	private Mono<Subscribe> findSubscribeByInfluence(Influence influence) {
+		return this.subscribeRepository.findByInfluenceId(influence.getId())
+		                               .switchIfEmpty(twitterApiService.validateInfluence(influence));
+	}
+
 	private Mono<Subscribe> saveSubscribe(Subscribe subscribe, String userId) {
 		subscribe.addUserId(userId);
 		return this.subscribeRepository.save(subscribe);
 	}
-
-
 
 	private Mono<ResponseEntity<Void>> publishSubscribeEvent(Subscribe subscribe) {
 		Sinks.EmitResult emitResult = eventEmitter.tryEmitNext(subscribe);
