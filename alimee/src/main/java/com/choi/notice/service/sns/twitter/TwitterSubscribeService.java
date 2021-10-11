@@ -8,12 +8,9 @@ import com.choi.notice.service.sns.twitter.entity.TwitterUser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Bean;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import reactor.core.publisher.Sinks;
 
 import java.util.Collections;
 
@@ -21,15 +18,9 @@ import java.util.Collections;
 public class TwitterSubscribeService implements SnsService {
 
 	private Logger logger = LoggerFactory.getLogger(getClass());
-	private final Sinks.Many<Subscribe> eventEmitter = Sinks.many().multicast().onBackpressureBuffer();
 
 	private SubscribeRepository subscribeRepository;
 	private TwitterApiService twitterApiService;
-
-	@Bean
-	public Flux<Subscribe> subscribePublisher() {
-		return eventEmitter.asFlux();
-	}
 
 	@Autowired
 	public void setSubscribeRepository(SubscribeRepository subscribeRepository) {
@@ -46,8 +37,7 @@ public class TwitterSubscribeService implements SnsService {
 		return Mono.just(influence)
 				.flatMap(this::getSubscribeOrElseGetNewOne)
 				.flatMap(subscribe -> this.saveSubscribe(subscribe, userId))
-				.flatMap(this::publishSubscribeEvent)
-				.log()  //todo: 필요시에만 로그를 출력하도록?
+				.map(unused -> ResponseEntity.status(200).<Void>build())
 				.onErrorReturn(ResponseEntity.status(500).build());
 	}
 
@@ -72,13 +62,5 @@ public class TwitterSubscribeService implements SnsService {
 	private Mono<Subscribe> saveSubscribe(Subscribe subscribe, String userId) {
 		subscribe.addUserId(userId);
 		return this.subscribeRepository.save(subscribe);
-	}
-
-	private Mono<ResponseEntity<Void>> publishSubscribeEvent(Subscribe subscribe) {
-		Sinks.EmitResult emitResult = eventEmitter.tryEmitNext(subscribe);
-		return Mono.defer(() -> emitResult.isSuccess() ?
-				Mono.just(ResponseEntity.status(200).build()) :
-				Mono.error(new RuntimeException("publish emitter error is occurred"))
-		);
 	}
 }
