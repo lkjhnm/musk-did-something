@@ -63,10 +63,6 @@ public class TwitterApiServiceTest extends AbstractTwitterServiceTest {
 		                .exchangeToMono(clientResponse -> clientResponse
 				                .bodyToMono(TwitterUser.class)
 		                );
-//				                .flatMap(dto -> dto.isError() ?
-//						                Mono.error(new RuntimeException("this is unknown user")) :
-//						                Mono.just(new Subscribe(Collections.emptyList(), elonmusk.setSnsDetail(dto))))
-//		                );
 	}
 
 	private Mono<Tweet> executeTweetCheckApi() {
