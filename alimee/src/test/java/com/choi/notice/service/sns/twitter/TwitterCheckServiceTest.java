@@ -8,12 +8,14 @@ import com.choi.notice.service.sns.twitter.entity.Tweet;
 import com.choi.notice.service.sns.twitter.entity.TwitterUser;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 import reactor.util.function.Tuple2;
 import reactor.util.function.Tuples;
 
 import javax.annotation.PostConstruct;
+import java.time.Duration;
 import java.util.Collections;
 
 /**
@@ -68,6 +70,25 @@ public class TwitterCheckServiceTest extends AbstractTwitterServiceTest {
 				.as(StepVerifier::create)
 				.expectNextCount(1)
 				.verifyComplete();
+	}
+
+	//todo: 스케줄링을 통한 check
+	//      Detector 클래스 만들기
+	//
+	//      감지 후 데이터 전파 방법은 어떻게? SMS, Email 고려
+
+	@Test
+	public void checkTweetFrequently() {
+		Flux.interval(Duration.ofSeconds(1))
+				.take(5) // 5번의 스케줄링을 테스트
+				.flatMap(unused -> subscribeRepository.findAll())
+				.map(subscribe -> subscribe.getInfluence().<TwitterUser>getSnsDetail())
+	            .flatMap(this::zipFetchedTweetAndRecentlyTweet)
+	            .filter(this::checkPostNewTweet)
+	            .log()
+	            .as(StepVerifier::create)
+	            .expectNextCount(5)
+	            .verifyComplete();
 	}
 
 	private Mono<Tuple2<Tweet, Tweet>> zipFetchedTweetAndRecentlyTweet(TwitterUser twitterUser) {
