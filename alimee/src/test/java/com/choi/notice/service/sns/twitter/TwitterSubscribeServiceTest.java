@@ -5,7 +5,9 @@ import com.choi.notice.persistence.Subscribe;
 import com.choi.notice.persistence.SubscribeRepository;
 import com.choi.notice.service.sns.SnsType;
 import com.choi.notice.service.sns.twitter.entity.TwitterUser;
+import com.mongodb.assertions.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
@@ -48,9 +50,21 @@ public class TwitterSubscribeServiceTest extends AbstractTwitterServiceTest {
 	}
 
 	@Test
+	public void tweetJsonBindTest() {
+		testPublisher
+				.flatMap(this::validateAndGetSubscribe)
+				.log()
+				.as(StepVerifier::create)
+				.assertNext(subscribe -> {
+					Assertions.assertNotNull(subscribe.getInfluence().<TwitterUser>getSnsDetail().getProfile());
+					Assertions.assertNotNull(subscribe.getInfluence().<TwitterUser>getSnsDetail().getTweet());
+				})
+				.verifyComplete();
+	}
+
+	@Test
 	public void saveSubscribeTest() {
 		testPublisher
-				.log()
 				.flatMap(this::getSubscribeOrElseGetNewOne)
 				.flatMap(subscribeRepository::save)
 				.as(StepVerifier::create)

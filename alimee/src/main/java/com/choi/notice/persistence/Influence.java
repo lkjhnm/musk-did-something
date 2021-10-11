@@ -44,6 +44,7 @@ public class Influence {
 		return "Influence{" +
 				"id='" + id + '\'' +
 				", snsType=" + snsType +
+				", snsDetails=" + snsDetails +
 				'}';
 	}
 }

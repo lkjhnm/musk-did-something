@@ -1,7 +1,6 @@
 package com.choi.notice.service.sns.twitter;
 
 import com.choi.notice.persistence.Influence;
-import com.choi.notice.persistence.Subscribe;
 import com.choi.notice.service.sns.twitter.entity.Tweet;
 import com.choi.notice.service.sns.twitter.entity.TwitterUser;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,10 +10,6 @@ import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
-import reactor.util.function.Tuple2;
-import reactor.util.function.Tuples;
-
-import java.util.Collections;
 
 @Service
 public class TwitterApiService {
@@ -39,7 +34,7 @@ public class TwitterApiService {
 	}
 
 	public Mono<Tweet> getTweet(TwitterUser twitterUser) {
-		return buildWebClient(String.format(subscribeBaseUri, twitterUser.getData().getId()))
+		return buildWebClient(String.format(subscribeBaseUri, twitterUser.getProfile().getId()))
 				.get()
 				.exchangeToMono(clientResponse -> clientResponse.bodyToMono(Tweet.class));
 	}

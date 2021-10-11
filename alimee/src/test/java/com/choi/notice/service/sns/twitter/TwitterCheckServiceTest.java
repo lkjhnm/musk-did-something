@@ -49,7 +49,7 @@ public class TwitterCheckServiceTest extends AbstractTwitterServiceTest {
 		tweet.setMeta(meta);
 
 		TwitterUser.Profile profile = new TwitterUser.Profile().setId("44196397").setName("Elon Musk").setUsername("elonmusk");
-		twitterUser.setData(profile);
+		twitterUser.setProfile(profile);
 		twitterUser.setTweet(tweet);
 		return new Subscribe(Collections.emptyList(), new Influence("elonmusk", SnsType.twitter).setSnsDetail(twitterUser));
 	}

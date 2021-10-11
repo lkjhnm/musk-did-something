@@ -1,12 +1,14 @@
 package com.choi.notice.service.sns.twitter.entity;
 
 import com.choi.notice.persistence.SnsDetails;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.List;
 
 public class TwitterUser implements SnsDetails<TwitterUser> {
 
 	List<Error> errors;
+	@JsonProperty("data")
 	Profile profile;
 	Tweet tweet;
 
@@ -27,11 +29,11 @@ public class TwitterUser implements SnsDetails<TwitterUser> {
 		this.errors = errors;
 	}
 
-	public Profile getData() {
+	public Profile getProfile() {
 		return profile;
 	}
 
-	public void setData(Profile profile) {
+	public void setProfile(Profile profile) {
 		this.profile = profile;
 	}
 

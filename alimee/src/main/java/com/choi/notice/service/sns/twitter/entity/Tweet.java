@@ -4,10 +4,12 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import org.springframework.data.annotation.Transient;
 
+
 import java.util.List;
 
 public class Tweet {
 
+	// todo: 리스트 중 첫번째 데이터(가장 최근)만 바인딩하도록
 	@Transient
 	private List<Data> data;
 	private Meta meta;
@@ -94,8 +96,7 @@ public class Tweet {
 	@Override
 	public String toString() {
 		return "Tweet{" +
-				"data=" + data +
-				", meta=" + meta +
+				"meta=" + meta +
 				'}';
 	}
 }
