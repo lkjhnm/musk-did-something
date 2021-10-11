@@ -26,7 +26,11 @@ public class TwitterSubscribeServiceTest extends AbstractTwitterServiceTest {
 	private TwitterApiService twitterApiService;
 
 	@PostConstruct
-	public void test() {
+	public void initialize() {
+		cleanDb();
+	}
+
+	private void cleanDb() {
 		this.subscribeRepository.deleteAll().block();
 	}
 
@@ -35,7 +39,7 @@ public class TwitterSubscribeServiceTest extends AbstractTwitterServiceTest {
 	@Test
 	public void fetchSubscribeByInfluence() {
 		testPublisher
-				.flatMap(this::findSubscribeByInfluence)
+				.flatMap(this::getSubscribeOrElseGetOne)
 				.as(StepVerifier::create)
 				.expectNextCount(1)
 				.verifyComplete();
@@ -45,7 +49,7 @@ public class TwitterSubscribeServiceTest extends AbstractTwitterServiceTest {
 	public void saveSubscribeTest() {
 		testPublisher
 				.log()
-				.flatMap(this::findSubscribeByInfluence)
+				.flatMap(this::getSubscribeOrElseGetOne)
 				.flatMap(subscribeRepository::save)
 				.as(StepVerifier::create)
 				.expectNextCount(1)
@@ -59,7 +63,7 @@ public class TwitterSubscribeServiceTest extends AbstractTwitterServiceTest {
 				.verifyComplete();
 	}
 
-	private Mono<Subscribe> findSubscribeByInfluence(Influence influence) {
+	private Mono<Subscribe> getSubscribeOrElseGetOne(Influence influence) {
 		return this.subscribeRepository.findByInfluenceId(influence.getId())
 		                               .switchIfEmpty(twitterApiService.validateInfluence(influence));
 	}
