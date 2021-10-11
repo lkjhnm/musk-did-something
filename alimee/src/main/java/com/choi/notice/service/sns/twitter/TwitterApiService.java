@@ -32,32 +32,16 @@ public class TwitterApiService {
 		this.twitterConfigService = twitterConfigService;
 	}
 
-	public Mono<Subscribe> validateInfluence(Influence influence) {
+	public Mono<TwitterUser> validateInfluence(Influence influence) {
 		return buildWebClient(String.format(validateBaseUri, influence.getId()))
 				.get()
-				.exchangeToMono(clientResponse -> clientResponse
-						.bodyToMono(TwitterUser.class)
-						.flatMap(twitterUser -> twitterUser.isError() ?
-								Mono.error(new RuntimeException("this is unknown user")) :
-								getNewSubscribe(influence, twitterUser))
-				);
+				.exchangeToMono(clientResponse -> clientResponse.bodyToMono(TwitterUser.class));
 	}
 
-	public Mono<Tuple2<TwitterUser, Tweet>> checkTweet(TwitterUser twitterUser) {
-		return getTweet(twitterUser)
-				.map(tweet -> Tuples.of(twitterUser, tweet));
-	}
-
-	private Mono<Tweet> getTweet(TwitterUser twitterUser) {
+	public Mono<Tweet> getTweet(TwitterUser twitterUser) {
 		return buildWebClient(String.format(subscribeBaseUri, twitterUser.getData().getId()))
 				.get()
 				.exchangeToMono(clientResponse -> clientResponse.bodyToMono(Tweet.class));
-	}
-
-	private Mono<Subscribe> getNewSubscribe(Influence influence, TwitterUser twitterUser) {
-		return getTweet(twitterUser)
-				.map(tweet -> twitterUser.setTweet(tweet))
-				.map(tw -> new Subscribe(Collections.emptyList(), influence.setSnsDetail(tw)));
 	}
 
 	private WebClient buildWebClient(String baseUri) {

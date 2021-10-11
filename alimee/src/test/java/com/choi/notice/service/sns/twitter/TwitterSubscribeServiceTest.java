@@ -4,12 +4,14 @@ import com.choi.notice.persistence.Influence;
 import com.choi.notice.persistence.Subscribe;
 import com.choi.notice.persistence.SubscribeRepository;
 import com.choi.notice.service.sns.SnsType;
+import com.choi.notice.service.sns.twitter.entity.TwitterUser;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import javax.annotation.PostConstruct;
+import java.util.Collections;
 
 /**
  *
@@ -39,7 +41,7 @@ public class TwitterSubscribeServiceTest extends AbstractTwitterServiceTest {
 	@Test
 	public void fetchSubscribeByInfluence() {
 		testPublisher
-				.flatMap(this::getSubscribeOrElseGetOne)
+				.flatMap(this::getSubscribeOrElseGetNewOne)
 				.as(StepVerifier::create)
 				.expectNextCount(1)
 				.verifyComplete();
@@ -49,7 +51,7 @@ public class TwitterSubscribeServiceTest extends AbstractTwitterServiceTest {
 	public void saveSubscribeTest() {
 		testPublisher
 				.log()
-				.flatMap(this::getSubscribeOrElseGetOne)
+				.flatMap(this::getSubscribeOrElseGetNewOne)
 				.flatMap(subscribeRepository::save)
 				.as(StepVerifier::create)
 				.expectNextCount(1)
@@ -63,8 +65,21 @@ public class TwitterSubscribeServiceTest extends AbstractTwitterServiceTest {
 				.verifyComplete();
 	}
 
-	private Mono<Subscribe> getSubscribeOrElseGetOne(Influence influence) {
+	private Mono<Subscribe> getSubscribeOrElseGetNewOne(Influence influence) {
 		return this.subscribeRepository.findByInfluenceId(influence.getId())
-		                               .switchIfEmpty(twitterApiService.validateInfluence(influence));
+		                               .switchIfEmpty(validateAndGetSubscribe(influence));
+	}
+
+	public Mono<Subscribe> validateAndGetSubscribe(Influence influence) {
+		return twitterApiService.validateInfluence(influence)
+		                        .flatMap(twitterUser -> twitterUser.isError() ?
+				                        Mono.error(new RuntimeException("this is unknown user")) :
+				                        createNewSubscribe(twitterUser, influence));
+	}
+
+	private Mono<Subscribe> createNewSubscribe(TwitterUser twitterUser, Influence influence) {
+		return twitterApiService.getTweet(twitterUser)
+		                 .map(tweet -> twitterUser.setTweet(tweet))
+		                 .map(tw -> new Subscribe(Collections.emptyList(), influence.setSnsDetail(tw)));
 	}
 }

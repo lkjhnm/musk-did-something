@@ -1,7 +1,6 @@
 package com.choi.notice.service.sns.twitter;
 
 import com.choi.notice.persistence.Influence;
-import com.choi.notice.persistence.Subscribe;
 import com.choi.notice.service.sns.SnsType;
 import com.choi.notice.service.sns.twitter.entity.Tweet;
 import com.choi.notice.service.sns.twitter.entity.TwitterUser;
@@ -15,7 +14,6 @@ import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import javax.annotation.PostConstruct;
-import java.util.Collections;
 
 //todo: API 테스트에서는 JPA를 사용하지 않는데 부모클래스에서 스캔하는 MongoDbConfiguration을 제외해야 할 것인가?
 public class TwitterApiServiceTest extends AbstractTwitterServiceTest {
@@ -35,9 +33,9 @@ public class TwitterApiServiceTest extends AbstractTwitterServiceTest {
 
 	@Test
 	public void validateInfluenceTest() {
-		Mono<Subscribe> subscribeMono = executeValidateApi().log();
+		Mono<TwitterUser> twitterUserMono = executeValidateApi().log();
 		StepVerifier
-				.create(subscribeMono)
+				.create(twitterUserMono)
 				.assertNext(subscribe -> Assertions.assertNotNull(subscribe))
 				.verifyComplete();
 	}
@@ -53,7 +51,7 @@ public class TwitterApiServiceTest extends AbstractTwitterServiceTest {
 				.verifyComplete();
 	}
 
-	private Mono<Subscribe> executeValidateApi() {
+	private Mono<TwitterUser> executeValidateApi() {
 		Influence elonmusk = new Influence("elonmusk", SnsType.twitter);
 		WebClient webClient = WebClient
 				.builder()
@@ -64,10 +62,11 @@ public class TwitterApiServiceTest extends AbstractTwitterServiceTest {
 		return webClient.get()
 		                .exchangeToMono(clientResponse -> clientResponse
 				                .bodyToMono(TwitterUser.class)
-				                .flatMap(dto -> dto.isError() ?
-						                Mono.error(new RuntimeException("this is unknown user")) :
-						                Mono.just(new Subscribe(Collections.emptyList(), elonmusk.setSnsDetail(dto))))
 		                );
+//				                .flatMap(dto -> dto.isError() ?
+//						                Mono.error(new RuntimeException("this is unknown user")) :
+//						                Mono.just(new Subscribe(Collections.emptyList(), elonmusk.setSnsDetail(dto))))
+//		                );
 	}
 
 	private Mono<Tweet> executeTweetCheckApi() {

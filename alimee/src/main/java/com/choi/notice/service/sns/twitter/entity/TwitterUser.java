@@ -7,7 +7,7 @@ import java.util.List;
 public class TwitterUser implements SnsDetails<TwitterUser> {
 
 	List<Error> errors;
-	Data data;
+	Profile profile;
 	Tweet tweet;
 
 	@Override
@@ -16,7 +16,7 @@ public class TwitterUser implements SnsDetails<TwitterUser> {
 	}
 
 	public boolean isError() {
-		return errors != null || (errors == null && data == null);
+		return errors != null || (errors == null && profile == null);
 	}
 
 	public List<Error> getErrors() {
@@ -27,12 +27,12 @@ public class TwitterUser implements SnsDetails<TwitterUser> {
 		this.errors = errors;
 	}
 
-	public Data getData() {
-		return data;
+	public Profile getData() {
+		return profile;
 	}
 
-	public void setData(Data data) {
-		this.data = data;
+	public void setData(Profile profile) {
+		this.profile = profile;
 	}
 
 	public Tweet getTweet() {
@@ -48,7 +48,7 @@ public class TwitterUser implements SnsDetails<TwitterUser> {
 	public String toString() {
 		return "TwitterUser{" +
 				"errors=" + errors +
-				", data=" + data +
+				", profile=" + profile +
 				", tweet=" + tweet +
 				'}';
 	}
@@ -122,7 +122,7 @@ public class TwitterUser implements SnsDetails<TwitterUser> {
 		}
 	}
 
-	public static class Data {
+	public static class Profile {
 		private String id;
 		private String name;
 		private String username;
@@ -131,29 +131,32 @@ public class TwitterUser implements SnsDetails<TwitterUser> {
 			return id;
 		}
 
-		public void setId(String id) {
+		public Profile setId(String id) {
 			this.id = id;
+			return this;
 		}
 
 		public String getName() {
 			return name;
 		}
 
-		public void setName(String name) {
+		public Profile setName(String name) {
 			this.name = name;
+			return this;
 		}
 
 		public String getUsername() {
 			return username;
 		}
 
-		public void setUsername(String username) {
+		public Profile setUsername(String username) {
 			this.username = username;
+			return this;
 		}
 
 		@Override
 		public String toString() {
-			return "Data{" +
+			return "Profile{" +
 					"id='" + id + '\'' +
 					", name='" + name + '\'' +
 					", username='" + username + '\'' +

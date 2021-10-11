@@ -6,6 +6,9 @@ import com.choi.notice.service.sns.twitter.entity.TwitterUser;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+import reactor.util.function.Tuple2;
+import reactor.util.function.Tuples;
 
 import javax.annotation.PostConstruct;
 
@@ -31,9 +34,13 @@ public class TwitterCheckService {
 		this.subscribePublisher
 				.log()
 				.map(subscribe -> subscribe.getInfluence().<TwitterUser>getSnsDetail())
-				.flatMap(twitterUser -> this.twitterApiService.checkTweet(twitterUser))
-//				.filter()
+				.flatMap(this::zipFetchedTweetAndRecentlyTweet)
 				.subscribe(tweet -> System.out.println(tweet));
+	}
+
+	private Mono<Tuple2<Tweet, Tweet>> zipFetchedTweetAndRecentlyTweet(TwitterUser twitterUser) {
+		return twitterApiService.getTweet(twitterUser)
+		                        .map(tweet -> Tuples.of(twitterUser.getTweet(), tweet));
 	}
 
 
