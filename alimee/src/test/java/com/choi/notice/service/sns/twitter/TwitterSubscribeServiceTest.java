@@ -58,6 +58,7 @@ public class TwitterSubscribeServiceTest extends AbstractTwitterServiceTest {
 				.assertNext(subscribe -> {
 					Assertions.assertNotNull(subscribe.getInfluence().<TwitterUser>getSnsDetail().getProfile());
 					Assertions.assertNotNull(subscribe.getInfluence().<TwitterUser>getSnsDetail().getTweet());
+					Assertions.assertNotNull(subscribe.getInfluence().<TwitterUser>getSnsDetail().getTweet().getData());
 				})
 				.verifyComplete();
 	}

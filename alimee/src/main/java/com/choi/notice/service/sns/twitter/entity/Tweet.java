@@ -1,28 +1,33 @@
 package com.choi.notice.service.sns.twitter.entity;
 
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import org.springframework.data.annotation.Transient;
+import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 
-
+import java.io.IOException;
 import java.util.List;
 
 public class Tweet {
 
-	// todo: 리스트 중 첫번째 데이터(가장 최근)만 바인딩하도록
-	@Transient
-	private List<Data> data;
+	@JsonDeserialize(using = FirstElementBindDeserializer.class)
+	private Data data;
+
 	private Meta meta;
 
 	public String getRecentlyTweetId() {
 		return this.meta.newestId;
 	}
 
-	public List<Data> getData() {
+	public Data getData() {
 		return data;
 	}
 
-	public void setData(List<Data> data) {
+	public void setData(Data data) {
 		this.data = data;
 	}
 
@@ -96,7 +101,25 @@ public class Tweet {
 	@Override
 	public String toString() {
 		return "Tweet{" +
-				"meta=" + meta +
+				"data=" + data +
+				", meta=" + meta +
 				'}';
+	}
+
+	private static class FirstElementBindDeserializer extends StdDeserializer<Data> {
+
+		public FirstElementBindDeserializer() {
+			this(null);
+		}
+
+		public FirstElementBindDeserializer(Class<?> vc) {
+			super(vc);
+		}
+
+		@Override
+		public Data deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException, JsonProcessingException {
+			List<Data> dataList = jsonParser.readValueAs(new TypeReference<List<Data>>() {});
+			return dataList.get(0);
+		}
 	}
 }
