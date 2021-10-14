@@ -1,2 +1,5 @@
 ﻿.idea
 alimee/src/main/resources/api-config.properties
+alimee/.mvn
+alimee/mvnw
+alimee/mvnw.cmd
