@@ -17,7 +17,6 @@ import reactor.util.function.Tuples;
 
 import javax.annotation.PostConstruct;
 import java.time.Duration;
-import java.util.logging.Level;
 
 @Service
 public class TwitterCheckService {
@@ -56,8 +55,7 @@ public class TwitterCheckService {
 	private void initTweetChecker() {
 		tweetChecker = Flux.interval(debugMode ? Duration.ofSeconds(10) : Duration.ofMinutes(1))
 		                   .flatMap(unused -> this.subscribeRepository.findAll())
-		                   .flatMap(this::checkNewTweetPost)
-		                   .log();
+		                   .flatMap(this::checkNewTweetPost);
 		this.tweetChecker
 				.subscribe(subscribe -> this.subscribeEmitter.tryEmitNext(subscribe));
 	}
@@ -72,7 +70,6 @@ public class TwitterCheckService {
 		TwitterUser fetched = subscribe.getInfluence().getSnsDetail();
 		return twitterApiService.getTweet(fetched)
 		                        .map(tweet -> Tuples.of(fetched.getTweet(), tweet))
-								.log(null, Level.FINE)
 		                        .filter(this::compareTweet)
 		                        .map(tuple -> tuple.getT2())
 		                        .map(newest -> {
@@ -82,6 +79,6 @@ public class TwitterCheckService {
 	}
 
 	private boolean compareTweet(Tuple2<Tweet,Tweet> tuple) {
-		return !tuple.getT1().getRecentlyTweetId().equals(tuple.getT2().getRecentlyTweetId());
+		return tuple.getT2().getData() != null && !tuple.getT1().getRecentlyTweetId().equals(tuple.getT2().getRecentlyTweetId());
 	}
 }
