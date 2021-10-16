@@ -1,5 +1,6 @@
 package com.choi.notice.service.sns.twitter;
 
+import com.choi.notice.persistence.Subscribe;
 import com.choi.notice.persistence.SubscribeRepository;
 import com.choi.notice.service.sns.twitter.entity.Tweet;
 import com.choi.notice.service.sns.twitter.entity.TwitterUser;
@@ -10,11 +11,13 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.core.publisher.Sinks;
 import reactor.util.function.Tuple2;
 import reactor.util.function.Tuples;
 
 import javax.annotation.PostConstruct;
 import java.time.Duration;
+import java.util.logging.Level;
 
 @Service
 public class TwitterCheckService {
@@ -25,7 +28,11 @@ public class TwitterCheckService {
 
 	private TwitterApiService twitterApiService;
 
-	private Flux<Tuple2<Tweet, Tweet>> tweetChecker;
+	private Flux<Subscribe> tweetChecker;
+
+	private Flux<Subscribe> tweetUpdater;
+
+	private Sinks.Many<Subscribe> subscribeEmitter = Sinks.many().multicast().onBackpressureBuffer();
 
 	@Value("${tweet.check.debug.enable}")
 	boolean debugMode;
@@ -43,28 +50,38 @@ public class TwitterCheckService {
 	@PostConstruct
 	public void initialize() {
 		initTweetChecker();
+		initTweetUpdater();
 	}
 
 	private void initTweetChecker() {
 		tweetChecker = Flux.interval(debugMode ? Duration.ofSeconds(10) : Duration.ofMinutes(1))
 		                   .flatMap(unused -> this.subscribeRepository.findAll())
-		                   .map(subscribe -> subscribe.getInfluence().<TwitterUser>getSnsDetail())
-		                   .flatMap(this::zipFetchedTweetAndRecentlyTweet)
-		                   .filter(this::checkPostNewTweet);
+		                   .flatMap(this::checkNewTweetPost)
+		                   .log();
 		this.tweetChecker
-				.subscribe(tuple -> logger.info("Recently Tweet Update Detected! oldest : [{}], latest : [{}]"
-						, tuple.getT1(), tuple.getT2()));
+				.subscribe(subscribe -> this.subscribeEmitter.tryEmitNext(subscribe));
 	}
 
-	private Mono<Tuple2<Tweet, Tweet>> zipFetchedTweetAndRecentlyTweet(TwitterUser twitterUser) {
-		return twitterApiService.getTweet(twitterUser)
-		                        .map(tweet -> Tuples.of(twitterUser.getTweet(), tweet));
+	private void initTweetUpdater() {
+		this.tweetUpdater = this.subscribeEmitter.asFlux();
+		this.tweetUpdater
+				.flatMap(this.subscribeRepository::save).subscribe();
 	}
 
+	private Mono<Subscribe> checkNewTweetPost(Subscribe subscribe) {
+		TwitterUser fetched = subscribe.getInfluence().getSnsDetail();
+		return twitterApiService.getTweet(fetched)
+		                        .map(tweet -> Tuples.of(fetched.getTweet(), tweet))
+								.log(null, Level.FINE)
+		                        .filter(this::compareTweet)
+		                        .map(tuple -> tuple.getT2())
+		                        .map(newest -> {
+			                        subscribe.getInfluence().<TwitterUser>getSnsDetail().setTweet(newest);
+			                        return subscribe;
+		                        });
+	}
 
-	private boolean checkPostNewTweet(Tuple2<Tweet,Tweet> tuple) {
-		Tweet oldestTweet = tuple.getT1();
-		Tweet recentlyTweet = tuple.getT2();
-		return !oldestTweet.getRecentlyTweetId().equals(recentlyTweet.getRecentlyTweetId());
+	private boolean compareTweet(Tuple2<Tweet,Tweet> tuple) {
+		return !tuple.getT1().getRecentlyTweetId().equals(tuple.getT2().getRecentlyTweetId());
 	}
 }
