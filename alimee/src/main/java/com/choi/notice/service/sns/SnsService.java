@@ -6,5 +6,5 @@ import reactor.core.publisher.Mono;
 
 public interface SnsService {
 
-	Mono<ResponseEntity<Void>> subscribeInfluence(Influence influence, String userId);
+	Mono<ResponseEntity<Void>> subscribeInfluence(Influence influence);
 }

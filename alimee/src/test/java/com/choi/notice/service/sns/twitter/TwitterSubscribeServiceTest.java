@@ -7,13 +7,11 @@ import com.choi.notice.service.sns.SnsType;
 import com.choi.notice.service.sns.twitter.entity.TwitterUser;
 import com.mongodb.assertions.Assertions;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import javax.annotation.PostConstruct;
-import java.util.Collections;
 
 /**
  *
@@ -95,6 +93,6 @@ public class TwitterSubscribeServiceTest extends AbstractTwitterServiceTest {
 	private Mono<Subscribe> createNewSubscribe(TwitterUser twitterUser, Influence influence) {
 		return twitterApiService.getTweet(twitterUser)
 		                 .map(tweet -> twitterUser.setTweet(tweet))
-		                 .map(tw -> new Subscribe(Collections.emptyList(), influence.setSnsDetail(tw)));
+		                 .map(twu -> new Subscribe(influence.setSnsDetail(twu)));
 	}
 }

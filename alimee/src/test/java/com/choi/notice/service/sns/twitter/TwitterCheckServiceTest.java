@@ -6,7 +6,10 @@ import com.choi.notice.persistence.SubscribeRepository;
 import com.choi.notice.service.sns.SnsType;
 import com.choi.notice.service.sns.twitter.entity.Tweet;
 import com.choi.notice.service.sns.twitter.entity.TwitterUser;
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,12 +22,12 @@ import reactor.util.function.Tuples;
 
 import javax.annotation.PostConstruct;
 import java.time.Duration;
-import java.util.Collections;
 
 /**
  *  1. 트위터 체크
  *  2. 최신 트윗 여부 판별
  */
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class TwitterCheckServiceTest extends AbstractTwitterServiceTest {
 
 	private Logger logger = LoggerFactory.getLogger(getClass());
@@ -58,7 +61,7 @@ public class TwitterCheckServiceTest extends AbstractTwitterServiceTest {
 		TwitterUser.Profile profile = new TwitterUser.Profile().setId("44196397").setName("Elon Musk").setUsername("elonmusk");
 		twitterUser.setProfile(profile);
 		twitterUser.setTweet(tweet);
-		return new Subscribe(Collections.emptyList(), new Influence("elonmusk", SnsType.twitter).setSnsDetail(twitterUser));
+		return new Subscribe(new Influence("elonmusk", SnsType.twitter).setSnsDetail(twitterUser));
 	}
 
 	Mono<Influence> elonmusk = Mono.just(new Influence("elonmusk", SnsType.twitter));
@@ -77,6 +80,7 @@ public class TwitterCheckServiceTest extends AbstractTwitterServiceTest {
 	}
 
 	@Test
+	@Order(1)
 	public void checkTweetFrequentlyTest() {
 		Flux.interval(Duration.ofSeconds(1))
 				.take(6) // 5번의 스케줄링을 테스트
@@ -95,6 +99,7 @@ public class TwitterCheckServiceTest extends AbstractTwitterServiceTest {
 	}
 
 	@Test
+	@Order(2)
 	public void updateNewTweetTest() {
 		Sinks.Many<Subscribe> subscribeEmitter = Sinks.many().multicast().onBackpressureBuffer();
 		Flux<Subscribe> updatePublisher = subscribeEmitter.asFlux();

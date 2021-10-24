@@ -12,8 +12,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
-import java.util.Collections;
-
 @Service
 public class TwitterSubscribeService implements SnsService {
 
@@ -33,10 +31,10 @@ public class TwitterSubscribeService implements SnsService {
 	}
 
 	@Override
-	public Mono<ResponseEntity<Void>> subscribeInfluence(Influence influence, String userId) {
+	public Mono<ResponseEntity<Void>> subscribeInfluence(Influence influence) {
 		return Mono.just(influence)
 				.flatMap(this::getSubscribeOrElseGetNewOne)
-				.flatMap(subscribe -> this.saveSubscribe(subscribe, userId))
+				.flatMap(this.subscribeRepository::save)
 				.map(unused -> ResponseEntity.status(200).<Void>build())
 				.onErrorReturn(ResponseEntity.status(500).build());
 	}
@@ -56,11 +54,6 @@ public class TwitterSubscribeService implements SnsService {
 	private Mono<Subscribe> createNewSubscribe(TwitterUser twitterUser, Influence influence) {
 		return twitterApiService.getTweet(twitterUser)
 		                        .map(tweet -> twitterUser.setTweet(tweet))
-		                        .map(tw -> new Subscribe(Collections.emptyList(), influence.setSnsDetail(tw)));
-	}
-
-	private Mono<Subscribe> saveSubscribe(Subscribe subscribe, String userId) {
-		subscribe.addUserId(userId);
-		return this.subscribeRepository.save(subscribe);
+		                        .map(twu -> new Subscribe(influence.setSnsDetail(twu)));
 	}
 }

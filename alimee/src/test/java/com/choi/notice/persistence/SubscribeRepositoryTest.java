@@ -37,7 +37,6 @@ public class SubscribeRepositoryTest {
 		Flux<Subscribe> savedSubscribePublisher = this.subscribeRepository.saveAll(subscribePublisher);
 		StepVerifier.create(savedSubscribePublisher)
 				.assertNext(subscribe -> {
-					assertThat(subscribe.getUserId()).contains("test@naver.com");
 					assertThat(subscribe.getInfluence().getId()).isEqualTo("test");
 				})
 				.verifyComplete();
@@ -46,10 +45,9 @@ public class SubscribeRepositoryTest {
 	private Flux<Subscribe> findSubscribeByInfluence(Flux<Influence> influencePublisher) {
 		Flux<Subscribe> subscribePublisher = influencePublisher
 				.flatMap(influence -> this.subscribeRepository.findByInfluenceId(influence.getId())
-				                                              .defaultIfEmpty(new Subscribe(Collections.emptyList(), influence))
+				                                              .defaultIfEmpty(new Subscribe(influence))
 				)
-				.log()
-				.map(subscribe -> subscribe.addUserId("test@naver.com"));
+				.log();
 		return subscribePublisher;
 	}
 
