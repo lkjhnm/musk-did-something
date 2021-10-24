@@ -55,7 +55,8 @@ public class TwitterCheckService {
 	private void initTweetChecker() {
 		tweetChecker = Flux.interval(debugMode ? Duration.ofSeconds(10) : Duration.ofMinutes(1))
 		                   .flatMap(unused -> this.subscribeRepository.findAll())
-		                   .flatMap(this::checkNewTweetPost);
+		                   .flatMap(this::checkNewTweetPost)
+		                   .onErrorContinue((throwable, o) -> logger.warn("Exception occurred during scheduled tweet Check, Element : {}", o));
 		this.tweetChecker
 				.subscribe(subscribe -> this.subscribeEmitter.tryEmitNext(subscribe));
 	}
@@ -63,7 +64,9 @@ public class TwitterCheckService {
 	private void initTweetUpdater() {
 		this.tweetUpdater = this.subscribeEmitter.asFlux();
 		this.tweetUpdater
-				.flatMap(this.subscribeRepository::save).subscribe();
+				.flatMap(this.subscribeRepository::save)
+				.onErrorContinue((throwable, o) -> logger.warn("Exception occurred during tweet update, Element : {}", o))
+				.subscribe();
 	}
 
 	private Mono<Subscribe> checkNewTweetPost(Subscribe subscribe) {

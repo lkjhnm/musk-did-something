@@ -6,8 +6,9 @@ import com.choi.notice.persistence.SubscribeRepository;
 import com.choi.notice.service.sns.SnsType;
 import com.choi.notice.service.sns.twitter.entity.Tweet;
 import com.choi.notice.service.sns.twitter.entity.TwitterUser;
-import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -19,15 +20,14 @@ import reactor.util.function.Tuples;
 import javax.annotation.PostConstruct;
 import java.time.Duration;
 import java.util.Collections;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 
 /**
  *  1. 트위터 체크
  *  2. 최신 트윗 여부 판별
  */
 public class TwitterCheckServiceTest extends AbstractTwitterServiceTest {
+
+	private Logger logger = LoggerFactory.getLogger(getClass());
 
 	@Autowired
 	private SubscribeRepository subscribeRepository;
@@ -76,17 +76,18 @@ public class TwitterCheckServiceTest extends AbstractTwitterServiceTest {
 				.verifyComplete();
 	}
 
-	//todo: 스케줄링을 통한 check
-	//      Detector 클래스 만들기
-	//
-	//      감지 후 데이터 전파 방법은 어떻게? SMS, Email 고려
-
 	@Test
 	public void checkTweetFrequentlyTest() {
 		Flux.interval(Duration.ofSeconds(1))
-				.take(5) // 5번의 스케줄링을 테스트
+				.take(6) // 5번의 스케줄링을 테스트
+				.doOnNext(aLong -> {
+					if (aLong == 4l) {
+						throw new RuntimeException("test");
+					}
+				})
 				.flatMap(unused -> subscribeRepository.findAll())
 	            .flatMap(this::checkNewTweetPost)
+				.onErrorContinue((throwable, o) -> logger.error("exception occurred during tweet check, Element : {}", o))
 	            .log()
 	            .as(StepVerifier::create)
 	            .expectNextCount(5)
@@ -99,7 +100,7 @@ public class TwitterCheckServiceTest extends AbstractTwitterServiceTest {
 		Flux<Subscribe> updatePublisher = subscribeEmitter.asFlux();
 
 		Flux.interval(Duration.ofSeconds(1))
-		    .take(1) // 5번의 스케줄링을 테스트
+		    .take(1)
 		    .flatMap(unused -> subscribeRepository.findAll())
 			.log()
 		    .flatMap(this::checkNewTweetPost)
@@ -111,6 +112,7 @@ public class TwitterCheckServiceTest extends AbstractTwitterServiceTest {
 		updatePublisher
 				.log()
 				.flatMap(subscribe -> subscribeRepository.save(subscribe))
+				.onErrorContinue((throwable, o) -> logger.error("exception occurred during update tweet, Element : {}", o))
 				.as(StepVerifier::create)
 				.expectNextCount(1)
 				.verifyComplete();
