@@ -1,6 +1,7 @@
 package com.choi.notice.service.sns.twitter.entity;
 
 import com.choi.notice.persistence.SnsDetails;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.List;
@@ -13,6 +14,7 @@ public class TwitterUser implements SnsDetails<TwitterUser> {
 	Tweet tweet;
 
 	@Override
+	@JsonIgnore
 	public TwitterUser getDetail() {
 		return this;
 	}
