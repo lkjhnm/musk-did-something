@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -17,6 +18,7 @@ import reactor.util.function.Tuples;
 
 import javax.annotation.PostConstruct;
 import java.time.Duration;
+import java.util.function.Supplier;
 
 @Service
 public class TwitterCheckService {
@@ -44,6 +46,11 @@ public class TwitterCheckService {
 	@Autowired
 	public void setSubscribeRepository(SubscribeRepository subscribeRepository) {
 		this.subscribeRepository = subscribeRepository;
+	}
+
+	@Bean
+	public Supplier<Flux<Subscribe>> notice() {
+		return () -> this.subscribeEmitter.asFlux();
 	}
 
 	@PostConstruct
